@@ -17,13 +17,20 @@ def _disk_render_path(args):
     if path:
         DEPLOY_DIR = settings.MEDUSA_DEPLOY_DIR
         realpath = path
+        reqest_args = None
         if path.startswith("/"):
             realpath = realpath[1:]
 
         if path.endswith("/"):
             needs_ext = True
         else:
-            needs_ext = False
+            if len(path.split('?', 1)) > 1:
+                reqest_args = path.split('?')[-1]
+                path = path.replace(reqest_args, '').replace('?', '')
+                realpath = realpath.replace(reqest_args, '').replace('?', '')
+                needs_ext = True
+            else:
+                needs_ext = False
 
         output_dir = os.path.abspath(os.path.join(
             DEPLOY_DIR,
@@ -33,7 +40,7 @@ def _disk_render_path(args):
             os.makedirs(output_dir)
         outpath = os.path.join(DEPLOY_DIR, realpath)
 
-        resp = client.get(path)
+        resp = client.get(path if not path else '?'.join([path, reqest_args]))
         if resp.status_code != 200:
             raise Exception
         if needs_ext:
